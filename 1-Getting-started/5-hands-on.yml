@@ -3,3 +3,4 @@
 # Webserver with 8gb EBS
 # Appserver with 10gb EBS
 # One S3 bucket to store invoice pdf files
+
