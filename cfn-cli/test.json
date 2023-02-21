@@ -1,0 +1,77 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "",
+    "Metadata": {
+
+    },
+    "Parameters": {
+    
+    },
+    "Mappings": {
+
+    },
+    "Conditions": {
+
+    },
+    "Resources": {
+        
+        "femiojo": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+                "AccessControl" : "PublicRead",
+                "BucketName": "femiojo",
+                "LifecycleConfiguration": {
+                    "Rules": [
+                        {
+                            "Id": "LfRule",
+                            "Prefix": "LfRule",
+                            "Status": "Enabled",
+                            "Transitions": [
+                                {
+                                    "TransitionInDays": 30,
+                                    "StorageClass": "STANDARD_IA"
+                                },
+                                {
+                                    "TransitionInDays": 90,
+                                    "StorageClass": "ONEZONE_IA"
+                                },
+                                {
+                                    "TransitionInDays": 180,
+                                    "StorageClass": "DEEP_ARCHIVE"
+                                }
+                            ]
+                        }
+                    ]
+
+                },
+                "VersioningConfiguration": {"Status": "Enabled"},
+                "WebsiteConfiguration": {"IndexDocument": "femi.html"}
+               
+            }
+        }
+        
+
+    },
+    "Outputs": {
+        "WebsiteURL": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "femiojo",
+                    "WebsiteURL"
+                ]
+            },
+            "Description": "URL for website hosted on S3"
+
+        },
+        
+        "ARN" : {
+          "Value" : {
+            "Fn::GetAtt": [
+                "femiojo",
+                "Arn"
+            ]
+          }
+        }
+        
+    }
+}
