@@ -1,0 +1,35 @@
+
+# Intrinsic Functions:
+
+{ "Fn::Base64" : "valueToEncode" }
+{ "Fn::Cidr" : ["ipBlock, count, cidrBits"]}
+{ "Fn::FindInMap" : [ "MapName", "TopLevelKey", "SecondLevelKey"] }
+{ "Fn::GetAtt" : [ "logicalNameOfResource", "attributeName" ] }
+{ "Fn::GetAZs" : "region" }
+"GroupSet" : [{"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStackNameParameter}-SecurityGroupID"}}]
+{ "Fn::Join" : [ "delimiter", [ comma-delimited list of values ] ] } = "Fn::Join" : [ ":", [ "a", "b", "c" ] ] = (a:b:c)
+{ "Fn::Length" : IntrinsicFunction }, { "Fn::Length" : Array }
+{ "Fn::Select" : [ index, listOfObjects ] }  = { "Fn::Select" : [ "1", [ "apples", "grapes", "oranges", "mangoes" ] ] } (apples)
+{ "Fn::Split" : [ "delimiter", "source string" ] }  = { "Fn::Split" : [ "|" , "a|b|c" ] } = ("a", "b", "c")
+{ "Fn::Sub" : [ String, { Var1Name: Var1Value, Var2Name: Var2Value } ] }
+{ "Fn::ToJsonString": Object }    { "Fn::ToJsonString": Array }
+{
+    "Fn::Transform": {
+        "Name": "macro name",
+        "Parameters": {
+            "Key": "value"
+        }
+    }
+}
+{ "Ref" : "logicalName" }
+
+# Pseudo Parameters:
+
+AWS::AccountId
+AWS::NotificationARNs
+AWS::NoValue
+AWS::Partition
+AWS::Region
+AWS::StackId
+AWS::StackName
+AWS::URLSuffix

@@ -1,0 +1,7 @@
+
+
+aws cloudformation create-stack --stack-name FmWeb1 --template-body file://webserver.json --parameters file://parameter.json --region us-east-1
+
+
+
+aws cloudformation delete-stack --stack-name FmWeb1 --region us-east-1

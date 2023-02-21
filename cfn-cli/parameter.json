@@ -1,0 +1,39 @@
+[
+    {
+        "ParameterKey": "SgPorts",
+        "ParameterValue": "22"
+    },
+
+    {
+        "ParameterKey": "SgPorts1",
+        "ParameterValue": "80"
+    },
+
+    {
+        "ParameterKey": "KeyName",
+        "ParameterValue": "nova-pkey"
+    },
+
+    {
+        "ParameterKey": "AMIID",
+        "ParameterValue": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs"
+    },
+
+    {
+        "ParameterKey": "Environment",
+        "ParameterValue": "Production"
+    },
+
+    {
+        "ParameterKey": "VolumeSize",
+        "ParameterValue": "8"
+    },
+
+    {
+        "ParameterKey": "SSHLocation",
+        "ParameterValue": "0.0.0.0/0"
+    }
+
+]
+
+

@@ -1,0 +1,188 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "this is to create web server",
+
+    "Parameters": {
+
+      "SgPorts": {
+        "Description": "allow ssh and http",
+        "Type": "Number",
+        "Default": 80,
+        "AllowedValues": [ "22", "80", "443" ]
+      },
+    
+      "SgPorts1": {
+        "Description": "allow ssh and http",
+        "Type": "Number",
+        "AllowedValues": [ "22", "80", "443" ]
+    
+      },
+      
+      "KeyName": {
+        "Description": "Select the SSH key pair",
+        "Type": "AWS::EC2::KeyPair::KeyName",
+        "Default": "",
+        "ConstraintDescription": "must be the name of an existing EC2 KeyPair"
+          
+      },
+
+      "AMIID": {
+        "Description": "EC2 AMI ID",
+        "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+        "Default": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs",
+        "ConstraintDescription": "Must be a valid AMI based on the region"
+              
+      },
+
+      "Environment": {
+        "Description": "Application Environment",
+        "Type": "String",
+        "Default": "Development",
+        "AllowedValues":["Development", "Acceptance", "Testing", "Production"]
+      },
+     
+    
+      "VolumeSize": {
+        "Description": "EC2 Volume size",
+        "Type": "Number",
+        "Default": 8
+      },
+         
+      "SSHLocation":{
+        "Description": "The IP address range that can be used to SSH to the EC2 instances",
+        "Type": "String",
+        "MinLength": "9",
+        "MaxLength": "18",
+        "Default": "0.0.0.0/0",
+        "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+        "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x"
+      }
+
+
+    },
+
+    "Conditions": {
+      "CreateProdResources": {
+        "Fn::Equals": [ {"Ref": "Environment"}, "Production" ]
+      }
+
+    },
+
+    "Mappings": {
+      
+      "EC2TypeBasedOnEnv": {
+        "Development": {
+          "InstanceType": "t2.small"
+        },
+        "Production": {
+          "InstanceType": "t2.micro"
+        },
+        "Acceptance": {
+          "InstanceType": "t2.medium"
+        },
+        "Testing": {
+          "InstanceType": "t2.large"
+        }
+      }
+      
+
+
+    },
+
+    "Metadata": {
+      "AWS::CloudFormation::Interface": {
+        "ParameterGroups": [ {"Label": {"default": "Network Confguration"}, "Parameters": [ "SgPorts", "SgPorts1", "SSHLocation"]},
+                            {"Label":{"default": "EC2 Configuration"}, "Parameters":[ "KeyName", "VolumeSize", "AMIID"]}],
+        "ParameterLabels": [ {"SgPorts": {"Default": "What port should be allowed"}}, {"AMIID": {"Default": "Which AMI should be allowed"}} ]
+      }
+    },
+
+    "Resources": {
+
+      "FmWebSg": {
+        "Type": "AWS::EC2::SecurityGroup",
+          "Properties": {
+            "GroupDescription": "Enable SSH access via port 22",
+            "SecurityGroupIngress": [ 
+              {"IpProtocol": "tcp",
+                "FromPort": { "Ref": "SgPorts" },
+                "ToPort": { "Ref": "SgPorts" },
+                "CidrIp": { "Ref":"SSHLocation" }},
+                {"IpProtocol": "tcp",
+                "FromPort": { "Ref": "SgPorts1" },
+                "ToPort": { "Ref": "SgPorts1" },
+                "CidrIp": { "Ref":"SSHLocation" }}
+            ],
+              "VpcId": "vpc-02ab5c165fe7564de",       
+              "Tags" : [  {"Key" : "Name", "Value" : "FmWebSg" } ]
+             
+          }
+      },
+
+      "FmWebSg1": {
+        "Type": "AWS::EC2::SecurityGroup",
+          "Properties": {
+            "GroupDescription": "Enable SSH access via port 22",
+            "SecurityGroupIngress": [ 
+              {"IpProtocol": "tcp",
+                "FromPort": { "Ref": "SgPorts" },
+                "ToPort": { "Ref": "SgPorts" },
+                "CidrIp": { "Ref":"SSHLocation" }}
+            ],
+              "VpcId": "vpc-02ab5c165fe7564de",       
+              "Tags" : [  {"Key" : "Name", "Value" : "FmWebSg1" } ]
+             
+          }
+      },
+
+      "FmWeb": {
+        "Type": "AWS::EC2::Instance",
+        "Properties": {
+          "KeyName": {"Ref": "KeyName"},
+          "ImageId": { "Ref": "AMIID" },
+          "InstanceType": { "Fn::FindInMap": [ "EC2TypeBasedOnEnv", { "Ref": "Environment" }, "InstanceType" ] },
+          "NetworkInterfaces": [ {
+            "AssociatePublicIpAddress": true,
+            "DeviceIndex": 0,
+            "SubnetId": "subnet-04b153242e4f570c7",
+            "GroupSet": [{"Fn::If": [ "CreateProdResources", {"Ref": "FmWebSg1" }, {"Ref": "FmWebSg"}]}]
+          }
+          ], 
+          
+          "BlockDeviceMappings": [ {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeType": "gp2",
+              "DeleteOnTermination": true,
+              "VolumeSize": { "Ref": "VolumeSize" }
+            }
+          }
+          ],
+          "Tags": [  {"Key" : "Name", "Value" : "FmWeb" } ],
+          "UserData": {
+            "Fn::Base64":{
+              "Fn::Sub": "#!/bin/bash\nyum update -y\nyum install -y httpd\nsystemctl start httpd.service\nsystemctl enable httpd.service\necho Hello Beautiful Family > /var/www/html/index.html\n"
+
+            }
+          }
+    
+        }
+      },
+
+      
+      "FemolaBkt": {
+        "Condition": "CreateProdResources",
+        "Type": "AWS::S3::Bucket",
+        "Properties": {
+          "BucketName": "femolabkt"
+        }
+      }
+      
+      
+
+    }
+}
+
+
+
+

@@ -1,0 +1,116 @@
+{
+    "Parameters":{
+       "SSHKey":{
+          "Type":"AWS::EC2::KeyPair::KeyName",
+          "Description":"select the keypair SSH",
+          "Default":""
+       },
+       "KeyPairRequired":{
+          "Type":"String",
+          "AllowedValues":[
+             "yes",
+             "no"
+          ],
+          "Description":"Select yes/no whether to Add key pair to instance or not."
+       }
+    },
+    "Conditions":{
+       "CreateLCWithKeyPair":{
+          "Fn::Equals":[
+             {
+                "Ref":"KeyPairRequired"
+             },
+             "yes"
+          ]
+       },
+       "CreateLCWithoutKeyPair":{
+          "Fn::Equals":[
+             {
+                "Ref":"KeyPairRequired"
+             },
+             "no"
+          ]
+       }
+    },
+    "Resources":{
+       "LaunchConfigWithKey":{
+          "Condition":"CreateLCWithKeyPair",
+          "Type":"AWS::AutoScaling::LaunchConfiguration",
+          "Properties":{
+             "ImageId":"ami-9eb4b1e5",
+             "InstanceType":"t2.micro",
+             "KeyName":{
+                "Ref":"SSHKey"
+             },
+             "BlockDeviceMappings":[
+                {
+                   "DeviceName":"/dev/xvda",
+                   "Ebs":{
+                      "VolumeSize":"8"
+                   }
+                }
+             ]
+          }
+       },
+       "LaunchConfigWithoutKey":{
+          "Condition":"CreateLCWithoutKeyPair",
+          "Type":"AWS::AutoScaling::LaunchConfiguration",
+          "Properties":{
+             "ImageId":"ami-9eb4b1e5",
+             "InstanceType":"t2.micro",
+             "BlockDeviceMappings":[
+                {
+                   "DeviceName":"/dev/xvda",
+                   "Ebs":{
+                      "VolumeSize":"8"
+                   }
+                }
+             ]
+          }
+       }
+    }
+ }
+ Share
+ Edit
+ 
+
+
+ "Blank": {
+    "Description": "remove property if ref",
+    "Type": "AWS::NoValue"
+  },
+
+
+"Resources":{
+   "eipName": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+         "Domain": "vpc",
+         "InstanceId": {"Ref": "Instance"}
+      }
+   },
+
+   "Instance": {
+      "Type": "AWS::EC2::Instance",
+      "count": 2,
+      "Properties": {
+         "KeyName": "nova-pkey",
+         "ImageId": "ami-0dfcb1ef8550277af",
+         "InstanceType": "t2.micro",
+         "SecurityGroupIds" : ["sg-05e9427913a33636e"],
+         "SubnetId": "subnet-04b153242e4f570c7"
+         "Tags": [
+            {
+                "Key": "Name",
+                "Value": "testing microphone is over"
+            }
+        ],
+        "UserData": {
+         "Fn::Base64":{
+           "Fn::Sub": "#!/bin/bash\nyum update -y\nyum install -y httpd\nsystemctl start httpd.service\nsystemctl enable httpd.service\necho Hello Beautiful Family > /var/www/html/index.html\n"
+
+         }
+       }
+      }
+   }
+ }

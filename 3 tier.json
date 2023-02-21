@@ -1,0 +1,304 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "this is to create vpc",
+
+    "Parameters": {
+      
+      "VpcCidr": {
+        "Description": "create cidr block for vpc",
+        "Type": "String",
+        "Default": "10.0.0.0/16"
+      },
+
+      "PubSubnetCidr": {
+        "Description": "public subnet cidr block",
+        "Type": "String",
+        "Default": "10.0.10.0/24"
+      },
+
+      "PvtSubnetCidr": {
+        "Description": "private subnet cidr block",
+        "Type": "String",
+        "Default": "10.0.20.0/24"
+      },
+      
+      "KeyName": {
+        "Description": "Keypair name ",
+        "Type": "AWS::EC2::KeyPair::KeyName",
+        "ConstraintDescription": "must be the name of an existing EC2 KeyPair"
+      },
+      
+      "AMIID": {
+        "Description": "EC2 AMI ID",
+        "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+        "Default": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs",
+        "ConstraintDescription": "Must be a valid AMI based on the region"
+          
+      },
+      
+      "InstanceType": {
+        "Description": "EC2 Instance Type",
+        "Type": "String",
+        "Default": "t2.micro"
+      },
+
+     "VolumeSize": {
+        "Description": "EC2 Volume size",
+        "Type": "Number",
+        "Default": 8
+     },
+     
+     "SgPorts": {
+        "Description": "allow ssh and http",
+        "Type": "Number",
+        "Default": "80",
+        "AllowedValues": ["22", "80", "443"]
+     },
+
+     "SgPorts1": {
+        "Description": "allow ssh and http",
+        "Type": "Number",
+        "Default": "22",
+        "AllowedValues": ["22", "80", "443"]
+
+      },
+      
+      "Environment": {
+          "Description": "Application Environment",
+          "Type": "String",
+          "Default": "Development",
+          "AllowedValues":["Development", "Acceptance", "Testing", "Production"]
+      }
+      
+      
+    },
+
+    "Mappings": {
+      
+      "EC2TypeBasedOnEnv": {
+                "Development": {
+                  "InstanceType": "t2.small"
+                },
+                "Production": {
+                  "InstanceType": "t2.micro"
+                },
+                "Acceptance": {
+                  "InstanceType": "t2.medium"
+                },
+                "Testing": {
+                  "InstanceType": "t2.large"
+                }
+      }
+      
+
+
+    },
+
+    "Resources": {
+      
+      "FmVpc": {
+        "Type": "AWS::EC2::VPC",
+        "Properties": {
+          "CidrBlock": { "Ref": "VpcCidr" },
+          "Tags":[{ "Key": "Name", "Value":  "DevOps" }]
+        }
+      },
+
+      "PubSub": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "AvailabilityZone": "us-east-1a",
+          "VpcId": { "Ref": "FmVpc" },
+          "CidrBlock": { "Ref": "PubSubnetCidr" },
+          "Tags":[{ "Key": "Name", "Value":  "PubSub" }]
+        }
+      },
+
+      "PvtSub": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "AvailabilityZone": "us-east-1a",
+          "VpcId": { "Ref": "FmVpc" },
+          "CidrBlock": { "Ref": "PvtSubnetCidr" },
+          "Tags":[{ "Key": "Name", "Value":  "PvtSub" }]
+        }
+      },
+
+      
+      "FmIgw": {
+        "Type": "AWS::EC2::InternetGateway",
+        "Properties": {
+          "Tags":[ { "Key": "Name", "Value":  "DevOpsIgw" } ]
+        }
+      },
+
+      "AttachGateway": {
+        "Type": "AWS::EC2::VPCGatewayAttachment",
+        "Properties": {
+          "VpcId": { "Ref": "FmVpc" },
+          "InternetGatewayId": { "Ref": "FmIgw" }
+        }
+      },
+
+      "FmRtPub": {
+        "Type": "AWS::EC2::RouteTable",
+        "Properties": {
+          "VpcId": { "Ref": "FmVpc"},
+          "Tags":[{ "Key": "Name", "Value":  "FmRtPub" }]
+        }
+      },
+      
+      "FmRPub": {
+        "Type": "AWS::EC2::Route",
+        "Properties": {
+          "RouteTableId": { "Ref": "FmRtPub" },
+          "DestinationCidrBlock": "0.0.0.0/0",
+          "GatewayId":{ "Ref": "FmIgw" }
+        }
+      },
+      
+      "FmRtAssPub": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+          "SubnetId": { "Ref": "PubSub" },
+          "RouteTableId": { "Ref": "FmRtPub" }
+        }
+      },
+
+      "FmNat" : {
+        "Type" : "AWS::EC2::NatGateway",
+        "Properties" : {
+           "AllocationId" : { "Fn::GetAtt" : ["FmNatEip", "AllocationId"] },
+           "SubnetId" : {  "Ref" : "PubSub" },
+           "Tags" : [  {"Key" : "Name", "Value" : "FmNat" } ]
+          }
+      },
+
+      "FmNatEip" : {
+        "Type" : "AWS::EC2::EIP",
+        "Properties" : {
+           "Domain" : "vpc"
+        }
+      },
+      
+      "FmRtPvt": {
+        "Type": "AWS::EC2::RouteTable",
+        "Properties": {
+          "VpcId": { "Ref": "FmVpc" },
+          "Tags" : [  {"Key" : "Name", "Value" : "FmRtPvt" } ]
+        }
+      },
+      
+      "FmRPvt": {
+        "Type": "AWS::EC2::Route",
+        "Properties": {
+          "RouteTableId": { "Ref": "FmRtPvt" },
+          "DestinationCidrBlock": "0.0.0.0/0",
+          "GatewayId": { "Ref": "FmNat" }
+        }
+      },
+      
+      "FmRtAssPvt": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+          "SubnetId": { "Ref": "PvtSub" },
+          "RouteTableId": { "Ref": "FmRtPvt" }
+        }
+      },
+      
+      "FmWeb": {
+        "Type": "AWS::EC2::Instance",
+        "Properties": {
+          "KeyName": { "Ref": "KeyName" },
+          "ImageId": { "Ref": "AMIID" },
+          "InstanceType": { "Ref": "InstanceType" },
+          "NetworkInterfaces": [
+            {
+              "AssociatePublicIpAddress": true,
+              "DeviceIndex": 0,
+              "SubnetId": { "Ref": "PubSub" },
+              "GroupSet": [{ "Ref": "FmWebSg" }]
+
+            }
+          ],
+          "BlockDeviceMappings": [
+            {
+              "DeviceName": "/dev/xvda",
+              "Ebs": {
+                "VolumeType": "gp2",
+                "DeleteOnTermination": true,
+                "VolumeSize": { "Ref": "VolumeSize" }
+              }
+            }
+          ],
+          "Tags" : [  {"Key" : "Name", "Value" : "FmWeb" } ],
+          "UserData": {"Fn::Base64":{"Fn::Join":["", [
+            "#!/bin/bash",
+            "yum update -y",
+            "yum install -y httpd24 php70 mysql56-server php70-mysqlnd",
+            "service httpd start",
+            "chkconfig httpd on",
+            "usermod -a -G apache ec2-user",
+            "chown -R ec2-user:apache /var/www",
+            "chmod 2775 /var/www",
+            "find /var/www -type d -exec sudo chmod 2775 {} +",
+            "find /var/www -type f -exec sudo chmod 0664 {} +",
+            "echo '<?php echo '<h2>Welcome to COS80001. Installed PHP version: ' . phpversion() . '</h2>'; ?>' > /var/www/html/phpinfo.php"
+          ]]}}
+
+        }
+      },
+      
+      "FmWebSg" : {
+        "Type" : "AWS::EC2::SecurityGroup",
+        "Properties" : {
+          "GroupDescription" : "Enable SSH access via port 22",
+          "SecurityGroupIngress" : [ 
+            {"IpProtocol" : "tcp",
+            "FromPort" : { "Ref": "SgPorts" },
+            "ToPort" : { "Ref": "SgPorts" },
+            "CidrIp" : "0.0.0.0/0"},
+            {"IpProtocol" : "tcp",
+            "FromPort" : { "Ref": "SgPorts1" },
+            "ToPort" : { "Ref": "SgPorts1" },
+            "CidrIp" : "0.0.0.0/0"}
+          ],
+          "VpcId" : { "Ref": "FmVpc" },
+          "Tags" : [  {"Key" : "Name", "Value" : "FmWebSg" } ]
+         
+          
+        }
+      }
+    },
+
+    "Outputs": {
+      
+      "SecurityGroupId": {
+        "Description": "security group id value",
+        "Value": { "Fn::GetAtt" : [ "FmWebSg", "GroupId" ]},
+        "Export": {
+          "Name": "FmServerGroupId"
+        }
+      },
+
+      "VPCID": {
+        "Description": "VPC id value",
+        "Value": { "Fn::GetAtt" : [ "FmVpc", "VpcId" ]},
+        "Export": {
+          "Name": "FmVpcId"
+        }
+      }
+      
+    }
+
+    
+    
+    
+}
+
+
+
+
+
+"Fn::If": [ {"Conditions": "CreateSgWithPorts1"}, {"Yes": "FmWebSgWithPort1"}, {"No": "FmWebSgWithoutPort1"} ] 
+}

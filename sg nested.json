@@ -1,0 +1,49 @@
+{
+"Parameters": {
+    
+    "AppName": {
+        "Description": "the app name to be created in the stack",
+        "Type": "String"
+       
+    },
+    
+    "VpcId": {
+        "Description": "vpc server for sg",
+        "Type": "AWS::EC2::VPC::Id"
+       
+    }
+    
+    
+
+}, 
+
+"Resources": {
+    
+    "FmSg" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : {"Fn::Sub": "Security group for ${AppName}"},
+        "SecurityGroupIngress" : [ 
+          {"IpProtocol": "tcp",
+          "FromPort": "22",
+          "ToPort": "22",
+          "CidrIp": "0.0.0.0/0",
+          "Description": "ssh from HR department"
+        }
+        ],
+        "VpcId" : {"Ref": "VpcId"}
+        
+      }
+    }
+    
+},
+"Outputs": {
+    
+    "SgId" : {
+      "Value" : {"Ref": "FmSg"},
+      "Description": "security group Id",
+      "Export":{ "Name": "FmSgId"}
+    }
+    
+}
+}

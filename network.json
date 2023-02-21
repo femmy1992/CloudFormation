@@ -1,0 +1,107 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "this is to create vpc",
+
+    "Parameters": {
+      
+        "VpcCidr": {
+          "Description": "create cidr block for vpc",
+          "Type": "String",
+          "Default": "10.0.0.0/16"
+        },
+  
+        "PubSubnetCidr": {
+          "Description": "public subnet cidr block",
+          "Type": "String",
+          "Default": "10.0.10.0/24"
+        },
+  
+        "PvtSubnetCidr": {
+          "Description": "private subnet cidr block",
+          "Type": "String",
+          "Default": "10.0.20.0/24"
+        }
+    },
+
+    "Resources": {
+      
+        "FmVpc": {
+          "Type": "AWS::EC2::VPC",
+          "Properties": {
+            "AvailabilityZone": "us-east-1a",
+            "CidrBlock": { "Ref": "VpcCidr" },
+            "Tags":[{ "Key": "Name", "Value":  "DevOps" }]
+          }
+        },
+  
+        "PubSub": {
+          "Type": "AWS::EC2::Subnet",
+          "Properties": {
+          
+            "VpcId": { "Ref": "FmVpc" },
+            "CidrBlock": { "Ref": "PubSubnetCidr" },
+            "Tags":[{ "Key": "Name", "Value":  "PubSub" }]
+          }
+        },
+  
+        "PvtSub": {
+          "Type": "AWS::EC2::Subnet",
+          "Properties": {
+            "AvailabilityZone": "us-east-1a",
+            "VpcId": { "Ref": "FmVpc" },
+            "CidrBlock": { "Ref": "PvtSubnetCidr" },
+            "Tags":[{ "Key": "Name", "Value":  "PvtSub" }]
+          }
+        }
+    },
+
+    "Outputs": {
+        "VpcId": {
+            "Description": "vpc id value",
+            "Value": {
+              "Fn::GetAtt": [
+                "FmVpc",
+                "VpcId"
+              ]
+            },
+            "Export": {
+              "Name": "FmVpc"
+            }
+        },
+
+        "PubDub": {
+            "Description": "Pub subnet id value",
+            "Value": {
+              "Fn::GetAtt": [
+                "PubSub",
+                "SubnetId"
+              ]
+            },
+            "Export": {
+              "Name": "FmPubSub"
+            }
+        },
+        "PvtDub": {
+            "Description": "Pvt subnet id value",
+            "Value": {
+              "Fn::GetAtt": [
+                "PvtSub",
+                "SubnetId"
+              ]
+            },
+            "Export": {
+              "Name": "FmPvtSub"
+            }
+        }
+        
+          
+        
+        
+        
+      
+         
+    }
+}
+
+
+

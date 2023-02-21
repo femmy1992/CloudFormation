@@ -1,0 +1,51 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "this is to create vpc",
+
+    "Resources": {
+
+        "FmIgw": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags":[ { "Key": "Name", "Value":  "FmIgw" } ]
+            }
+        },
+    
+        "AttachGateway": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": { "Fn::ImportValue": "FmVpc" },
+                "InternetGatewayId": { "Ref": "FmIgw" }
+            }
+        },
+
+        "FmRtPub": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": { "Fn::ImportValue": "FmVpc" },
+                 "Tags":[{ "Key": "Name", "Value":  "FmRtPub" }]
+            }
+        },
+          
+        "FmRPub": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+              "RouteTableId": { "Ref": "FmRtPub" },
+              "DestinationCidrBlock": "0.0.0.0/0",
+              "GatewayId":{ "Ref": "FmIgw" }
+            }
+        },
+          
+        "FmRtAssPub": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": { "Fn::ImportValue":  "FmPubSub" },
+                 "RouteTableId": { "Ref": "FmRtPub" }
+            }
+        }
+        
+
+
+
+    }
+}

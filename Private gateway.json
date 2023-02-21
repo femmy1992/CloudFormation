@@ -1,0 +1,82 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "this is to create vpc",
+
+    "Resources": {
+
+      "FmNat": {
+        "Type": "AWS::EC2::NatGateway",
+        "Properties": {
+           "AllocationId": { "Fn::GetAtt" : ["FmNatEip", "AllocationId"] },
+           "SubnetId": { "Fn::ImportValue":  "FmPubSub" },
+           "Tags": [  {"Key" : "Name", "Value" : "FmNat" } ]
+        }
+      },
+
+      "FmNatEip": {
+        "Type": "AWS::EC2::EIP",
+        "Properties": {
+           "Domain": "vpc"
+        }
+      },
+      
+      "FmRtPvt": {
+        "Type": "AWS::EC2::RouteTable",
+        "Properties": {
+            "VpcId": { "Fn::ImportValue": "FmVpc" },
+            "Tags" : [  {"Key" : "Name", "Value" : "FmRtPvt" } ]
+        }
+      },
+      
+      "FmRtAssPvt": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+            "SubnetId": { "Fn::ImportValue":  "FmPubSub" },
+            "RouteTableId": { "Ref": "FmRtPvt" }
+        }
+      },
+      "FmRPvt": {
+        "Type": "AWS::EC2::Route",
+        "Properties": {
+            "RouteTableId": { "Fn::ImportValue":  "FmRtPvt" },
+            "DestinationCidrBlock": "0.0.0.0/0",
+            "GatewayId": { "Fn::ImportValue":  "FmNatG" }
+        }
+      }
+
+    
+    },
+
+    "Outputs": {
+        "RouteTableId": {
+            "Description": "private RT id value",
+            "Value": {
+              "Fn::GetAtt": [
+                "FmRtPvt",
+                "RouteTableId"
+              ]
+            },
+            "Export": {
+              "Name": "FmRtPvt"
+            }
+        },
+
+        "GatewayId": {
+            "Description": "Nat gateway id value",
+            "Value": {
+              "Fn::GetAtt": [
+                "FmNat",
+                "NatGatewayId"
+              ]
+            },
+            "Export": {
+              "Name": "FmNatG"
+            }
+        }
+    
+    }
+
+
+
+
+}

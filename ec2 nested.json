@@ -1,0 +1,52 @@
+{
+    "Parameters": {
+        
+        "InstanceType": {
+            "Description": "Ec2 instance type",
+            "Type": "String",
+            "Default": "t2.micro"
+        },
+        
+        "ImageId": {
+            "Description": "Ami Id ",
+            "Type": "AWS::EC2::Image::Id"
+           
+        },
+        
+        "SgId": {
+            "Description": "url of sg nested stack",
+            "Type": "String"
+           
+        },
+        
+        "SubnetId": {
+            "Description": "custom subnet",
+            "Type": "AWS::EC2::Subnet::Id"
+    
+        }
+        
+        
+        
+        
+    },
+
+    "Resources": {
+        
+        "FmWeb": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "ImageId": {"Ref": "ImageId"},
+                "InstanceType": {"Ref": "InstanceType"},
+                "SecurityGroupIds" : [{"Fn::ImportValue": "FmSgId"}],
+                "SubnetId": {"Ref": "SubnetId"}
+                
+            }
+        }
+    }
+
+
+
+
+
+
+}

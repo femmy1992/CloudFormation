@@ -1,0 +1,91 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: My CloudFormation hands-on 
+
+Parameters:
+  KeyName:
+    Description: name of existing EC2 pairkey to enable SSH
+    Type: AWS::EC2::KeyPair::KeyName
+  
+  AMIID:
+    Description: EC2 Instance Image ID
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs
+
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.micro  
+    AllowedValues:
+      - t1.micro
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - m1.small
+      - m1.medium
+    ConstraintDescription: must be a valid EC2 instance type.
+  
+  SubnetId:
+    Description: WebServer SubnetId
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /femola/subnet
+  
+  SecurityGroupId:
+    Description: Webserver EC2 security group 
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /femola/sg
+
+  VolumeSize:
+    Description: EBS Volume size
+    Type: Number
+    Default: 8
+    MinValue: 8
+    MaxValue: 100
+    ConstraintDescription: must be a number between 8 to 100 Gb    
+
+Resources: 
+    WebServer:
+      Type: AWS::EC2::Instance
+      Properties:
+        KeyName: !Ref KeyName
+        ImageId: !Ref AMIID
+        InstanceType: !Ref InstanceType
+        NetworkInterfaces:
+          - AssociatePublicIpAddress: true
+            DeviceIndex: 0
+            SubnetId: !Ref SubnetId
+            GroupSet: 
+              - !Ref SecurityGroupId
+        UserData: 
+          Fn::Base64: |
+            #!/bin/bash
+            sudo su 
+            yum update -y 
+            yum install -y httpd 
+            systemctl start httpd.service 
+            systemctl enable httpd.service 
+            echo "Kisses From The Other Side" > /var/www/html/index.html
+        BlockDeviceMappings:
+          - DeviceName: "/dev/sdm"
+            Ebs:
+              VolumeSize: !Ref VolumeSize
+              VolumeType: "gp2"
+              DeleteOnTermination: true
+    AppServer:
+      Type: AWS::EC2::Instance
+      Properties:
+        KeyName: !Ref KeyName
+        ImageId: !Ref AMIID
+        InstanceType: !Ref InstanceType
+        SecurityGroupIds: 
+          - !Ref SecurityGroupId
+        SubnetId: !Ref SubnetId
+        BlockDeviceMappings:
+          - DeviceName: "/dev/xvda"
+            Ebs:
+              VolumeSize: !Ref VolumeSize
+              VolumeType: "gp2"
+              DeleteOnTermination: true
+    

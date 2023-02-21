@@ -1,0 +1,47 @@
+{
+"Parameters": {
+    
+    "SubnetId": {
+        "Description": "Subnet Id",
+        "Type": "AWS::EC2::Subnet::Id"
+        
+       
+    }
+    
+},
+"Resources":{
+        "eipName": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc",
+                "InstanceId": {"Ref": "Instance"}
+
+            }
+        },
+ 
+    "Instance": {
+       "Type": "AWS::EC2::Instance",
+       "Properties": {
+          "KeyName": "nova-pkey",
+          "ImageId": "ami-0dfcb1ef8550277af",
+          "InstanceType": "t2.micro",
+          "SecurityGroupIds" : ["sg-05e9427913a33636e"],
+          "SubnetId": {"Ref": "SubnetId"},
+          "Tags": [
+             {
+                 "Key": "Name",
+                 "Value": "testing microphone is over"
+             }
+            ],
+         "UserData": {
+          "Fn::Base64":{
+            "Fn::Sub": "#!/bin/bash\nyum update -y\nyum install -y httpd\nsystemctl start httpd.service\nsystemctl enable httpd.service\necho Hello Beautiful Family > /var/www/html/index.html\n"
+ 
+          }
+            }
+       }
+    }
+  }
+}
+
+

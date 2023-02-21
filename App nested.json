@@ -1,0 +1,103 @@
+{
+"AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "",
+    "Metadata": {
+
+    },
+    "Parameters": {
+        
+        "FmVpcId": {
+            "Description": "aws vpc",
+            "Type": "AWS::EC2::VPC::Id"
+        },
+        
+        "FmSgTemplateUrl": {
+            "Description": "url for security group",
+            "Type": "String"
+    
+        },
+        
+        "FmInstanceTempUrl": {
+            "Description": "ec2 instance template",
+            "Type": "String"
+        },
+        
+        "ImageId": {
+            "Description": "Ec2 Ami Id",
+            "Type": "AWS::EC2::Image::Id"
+        },
+        
+        "InstanceType": {
+            "Description": "Ec2 instance tyrp",
+            "Type": "String",
+            "Default": "t2.micro"
+        },
+        
+        "SubnetId": {
+            "Description": "custom subnet",
+            "Type": "AWS::EC2::Subnet::Id"
+          
+        }
+        
+        
+        
+        
+        
+        
+    
+    },
+    "Mappings": {
+
+    },
+    "Conditions": {
+
+    },
+    "Resources": {
+        
+       
+    "FmSgStack": {
+        "Type": "AWS::CloudFormation::Stack",
+        "Properties": {
+            "TemplateURL": {"Ref": "FmSgTemplateUrl"},
+            "Parameters": {
+                "AppName": {"Ref": "AWS::StackName" },
+                "VpcId": {"Ref": "FmVpcId"}
+                
+            },
+            "TimeoutInMinutes": 5
+        }
+    },
+       
+    "FmInstanceStack": {
+        "Type": "AWS::CloudFormation::Stack",
+        "Properties": {
+            "TemplateURL": {"Ref": "FmInstanceTempUrl"},
+            "Parameters": {
+                "InstanceType": {"Ref": "InstanceType"},
+                "ImageId": {"Ref": "ImageId"},
+                "SecurityGroupId": {  "Fn::GetAtt" : "FmSgStack.Outputs.SgId" },
+                "SubnetId": {"Ref": "SubnetId"}   
+           },
+           
+            "TimeoutInMinutes": 10
+        }
+    }
+       
+       
+        
+
+    },
+    "Outputs": {
+        
+        "SgStack" : {
+          "Value" : {"Ref": "FmSgStack"}
+        },
+        
+        "Ec2Stack" : {
+          "Value" : {"Ref": "FmInstanceStack"}
+        }
+        
+        
+
+    }
+}
